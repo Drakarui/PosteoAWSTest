@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Serverless Arch (Posting app)
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: 'General config'
+        Parameters:
+          - APIRest
+          - Lambda
+          - S3Static
+          - DynamoDBApp
+
+    ParameterLabels:
+      APIRest:
+        default: 'AWS API Gateway services'
+      Lambda:
+        default: 'AWS Lambda for API rest Services'
+      S3Static:
+        default: 'S3 hosting the static AngularJS app'
+      DynamoDBApp:
+        default: 'Database'
+
+Parameters:
+
+  S3BucketNameForSAPP:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-.]*[0-9a-zA-Z])*$
+    ConstraintDescription: Bucket name can include numbers, lowercase letters, uppercase letters, periods (.), and hyphens (-). It cannot start or end with a hyphen (-).
+    Description: S3 bucket name for the Nested Stacks. S3 bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Type: String
+    Default: cfn-posteo.com
+
+  S3BucketNameForLambdas:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-.]*[0-9a-zA-Z])*$
+    ConstraintDescription: Bucket name can include numbers, lowercase letters, uppercase letters, periods (.), and hyphens (-). It cannot start or end with a hyphen (-).
+    Description: S3 bucket name for the Nested Stacks. S3 bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Type: String
+    Default: cfn-S3-Lambdas-Scripts-AppStuff
+
+Resources:
+  S3Bucket4App:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Ref S3BucketNameForSAPP
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      VersioningConfiguration:
+        Status: Enabled
+    DeletionPolicy: Retain
+      
+
+  S3Bucket4Lambdas:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key:  Name
+          Value: !Ref S3BucketNameForLambdas
+
+
+  BucketAppPolicy: 
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: 
+        Ref: "S3BucketNameForSAPP"
+      PolicyDocument: 
+        Statement: 
+          - Action  : 
+              - "s3:GetObject"
+            Effect: "Allow"
+            Resource: 
+              Fn::Join: 
+                - ""
+                -
+                  - "arn:aws:s3:::"
+                  - Ref: "S3BucketNameForSAPP"
+                  - "/*"
+            Principal: "*"
+            
+
+Outputs:
+  S34AppLink:
+    Value: !GetAtt  [S3Bucket4App, WebsiteURL]
+    Description: 'Acces Link to Hosted App'
